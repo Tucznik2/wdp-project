@@ -106,7 +106,7 @@ class GUI:
     # funkcja sprawdza, który guzik został wciśnięty, a nastepnie generuje wykres i ustawia odpowiedni tytuł
     def show_graph(self, button):
         amount = int(self.size_entry.get())
-        lst = np.random.randint(0, 100, amount)
+        lst = np.random.randint(1, 100, amount)
         # otwieranie i wprowadzanie danych do posorotwania do pliku
         result_file = open('wyniki.txt', 'a')
         result_file.write('Dane do posortowania:\n')
@@ -141,6 +141,8 @@ class GUI:
         def update_fig(lst, rects, iteration):
             for rect, val in zip(rects, lst):
                 rect.set_height(val)
+                rect.set_color('red')
+
             iteration[0] += 1
             text.set_text("Ilość operacji: {}".format(iteration[0]))
 
