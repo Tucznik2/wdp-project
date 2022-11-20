@@ -141,7 +141,6 @@ class GUI:
         def update_fig(lst, rects, iteration):
             for rect, val in zip(rects, lst):
                 rect.set_height(val)
-                rect.set_color('red')
 
             iteration[0] += 1
             text.set_text("Ilość operacji: {}".format(iteration[0]))
