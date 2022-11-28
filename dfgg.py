@@ -1,8 +1,37 @@
-import time
 import tkinter as tk
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
+
+
+def selection_sort(lst):
+    for i in range(len(lst) - 1):
+        minimum = i
+        for j in range(i + 1, len(lst)):
+            if lst[j] < lst[minimum]:
+                minimum = j
+        if i != minimum:
+            pom = lst[i]
+            lst[i] = lst[minimum]
+            lst[minimum] = pom
+
+
+def bubble_sort(lst):
+    for i in range(len(lst)):
+        for j in range(0, len(lst) - i - 1):
+            if lst[j] > lst[j + 1]:
+                lst[j], lst[j + 1] = lst[j + 1], lst[j]
+
+
+def insertion_sort(lst):
+    for i in range(1, len(lst)):
+        selected = lst[i]
+        y = i - 1
+        while y >= 0 and selected < lst[y]:
+            lst[y + 1] = lst[y]
+            y -= 1
+        lst[y + 1] = selected
+
 
 class TrackedArray():
 
@@ -28,7 +57,7 @@ class TrackedArray():
         if isinstance(idx, type(None)):
             return [(i, op) for (i, op) in zip(self.indices, self.access_type)]
         else:
-            return (self.indices[idx], self.access_type[idx])
+            return self.indices[idx], self.access_type[idx]
 
     def __delitem__(self, key):
         self.track(key, "del")
@@ -50,6 +79,7 @@ class TrackedArray():
 
     def __repr__(self):
         return self.arr.__repr__()
+
 
 class GUI:
     # konstruktor tworzący interfejs graficzny
@@ -80,7 +110,8 @@ class GUI:
         self.speed_label = tk.Label(self.speed_frame, text="Wybierz prędkość sortowania:", font=('Arial', 16))
         self.speed_default = tk.StringVar(self.speed_frame)
         self.speed_default.set("1000")
-        self.speed_select = tk.OptionMenu(self.speed_frame, self.speed_default,"1","10","100", "200", "500", "1000", "2000", "3000")
+        self.speed_select = tk.OptionMenu(self.speed_frame, self.speed_default, "1", "10", "100", "200", "500", "1000",
+                                          "2000", "3000")
         self.speed_label.grid(row=0, column=0, sticky=tk.W + tk.E, padx=10)
         self.speed_select.grid(row=0, column=1, sticky=tk.W + tk.E)
 
@@ -112,64 +143,64 @@ class GUI:
         self.root.mainloop()
 
     def show_graph(self, button):
-        N = 30
-        FPS = 60
-        arr = np.round(np.linspace(0, 1000, N), 0)
+        fps = 60
+        lst = np.random.randint(1, 100, int(self.size_entry.get()))
         np.random.seed(0)
-        np.random.shuffle(arr)
-
-        arr = TrackedArray(arr, "full")
-
+        np.random.shuffle(lst)
+        lst = TrackedArray(lst, "full")
         np.random.seed(0)
 
-        sorter = "Insertion"
-        t0 = time.perf_counter()
-        i = 1
-        while i < len(arr):
-            j = i
-            while (j > 0) and (arr[j-1] > arr[j]):
-                temp = arr[j-1]
-                arr[j-1] = arr[j]
-                arr[j] = temp
-                j -= 1
+        result_file = open('wyniki.txt', 'a')
+        result_file.write('Dane do posortowania:\n')
+        for x in lst:
+            result_file.write(str(x) + " ")
 
-            i += 1
-        t_ex = time.perf_counter() - t0
+        result_file.write('\n')
 
-        print(f"---------- {sorter} Sort ----------")
-        print(f"Array Sorted in {t_ex * 1E3:.1f} ms | {len(arr.full_copies):.0f} "
-              f"array access operations were performed")
 
+        if button == "bubble":
+            title = "Bubble"
+            bubble_sort(lst)
+        elif button == "insert":
+            title = "Insertion"
+            insertion_sort(lst)
+        elif button == "select":
+            title = "Selection"
+            selection_sort(lst)
 
         fig, ax = plt.subplots(figsize=(16, 8))
-        container = ax.bar(np.arange(0, len(arr), 1),
-                           arr.full_copies[0], align="edge", width=0.8)
-        fig.suptitle(f"{sorter} sort")
-        ax.set(xlabel="Index", ylabel="Value")
-        ax.set_xlim([0, N])
+        bar_rect = ax.bar(np.arange(0, len(lst), 1),
+                           lst.full_copies[0], align="edge", width=0.8)
+        fig.suptitle(f"{title} sort")
+        ax.set(xlabel="Index", ylabel="Wartość")
+        ax.set_xlim([0, int(self.size_entry.get())])
         txt = ax.text(0.01, 0.99, "", ha="left", va="top", transform=ax.transAxes)
 
-
         def update(frame):
-            txt.set_text(f"Accesses = {frame}")
-            for rectangle, height in zip(container.patches, arr.full_copies[frame]):
+            txt.set_text(f"Operacje = {frame}")
+            for rectangle, height in zip(bar_rect.patches, lst.full_copies[frame]):
                 rectangle.set_height(height)
                 rectangle.set_color("#1f77b4")
 
-            idx, op = arr.GetActivity(frame)
+            idx, op = lst.GetActivity(frame)
             if op == "get":
-                container.patches[idx].set_color("magenta")
+                bar_rect.patches[idx].set_color("magenta")
             elif op == "set":
-                container.patches[idx].set_color("red")
+                bar_rect.patches[idx].set_color("red")
 
-
-            return (*container,)
-
+            return txt, *bar_rect
 
         if __name__ == "__main__":
-            ani = FuncAnimation(fig, update, frames=range(len(arr.full_copies)),
-                                blit=True, interval=1000. / FPS, repeat=False)
+            ani = FuncAnimation(fig, update, frames=range(len(lst.full_copies)),
+                                blit=True, interval=int(self.speed_default.get()) / fps, repeat=False)
 
             plt.show()
+
+        result_file.write('Dane posortowane:\n')
+        for x in lst:
+            result_file.write(str(x) + " ")
+
+        result_file.write('\n')
+        result_file.close()
 
 GUI()
