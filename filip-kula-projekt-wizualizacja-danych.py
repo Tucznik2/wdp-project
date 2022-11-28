@@ -41,6 +41,41 @@ def insertion_sort(lst):
         lst[y + 1] = selected
         yield lst
 
+class TrackedArray():
+    def __init__(self, arr):
+        self.arr = np.copy(arr)
+        self.reset()
+
+    def reset(self):
+        self.indices = []
+        self.values = []
+        self.values = []
+        self.access_type = []
+        self.full_copies = []
+
+    def track(self, key, access_type):
+        self.indices.append(key)
+        self.values.append(self.arr[key])
+        self.access_type.append(access_type)
+        self.full_copies.append(np.copy(self.arr))
+
+    def GetActivity(self, idx=None):
+        if isinstance(idx, type(None)):
+            return [(i, op) for (i, op) in zip(self.indices, self.access_type)]
+        else:
+            return (self.indices[idx], self.access_type[idx])
+
+    def __getitem__(self, key):
+        self.track(key, "get")
+        return self.arr.__getitem__(key)
+
+    def __setitem__(self, key, value):
+        self.arr.__setitem__(key, value)
+        self.track(key, "set")
+
+    def __len__(self):
+        return self.arr.__len__()
+
 
 # definicja klasy
 class GUI:
@@ -106,7 +141,8 @@ class GUI:
     # funkcja sprawdza, który guzik został wciśnięty, a nastepnie generuje wykres i ustawia odpowiedni tytuł
     def show_graph(self, button):
         amount = int(self.size_entry.get())
-        lst = np.random.randint(0, 100, amount)
+        lst = np.random.randint(1, 100, amount)
+        lst = TrackedArray(lst)
         # otwieranie i wprowadzanie danych do posorotwania do pliku
         result_file = open('wyniki.txt', 'a')
         result_file.write('Dane do posortowania:\n')
@@ -116,10 +152,23 @@ class GUI:
         result_file.write('\n')
 
         if button == "insert":
-            anim_data = insertion_sort(lst)
+            # anim_data = insertion_sort(lst)
+            for i in range(1, len(lst)):
+                selected = lst[i]
+                y = i - 1
+                while y >= 0 and selected < lst[y]:
+                    lst[y + 1] = lst[y]
+                    y -= 1
+                lst[y + 1] = selected
+                # yield lst
             title = 'Sortowanie przez wstawianie'
         elif button == "bubble":
-            anim_data = bubble_sort(lst)
+            # anim_data = bubble_sort(lst)
+            for i in range(len(lst)):
+                for j in range(0, len(lst) - i - 1):
+                    if lst[j] > lst[j + 1]:
+                        lst[j], lst[j + 1] = lst[j + 1], lst[j]
+                    # yield lst
             title = 'Sortowanie bombelkowe'
         elif button == "select":
             anim_data = selection_sort(lst)
@@ -138,15 +187,31 @@ class GUI:
         iteration = [0]
 
         # funkcja odpowiadająca za odświeżanie wykresu i zliczanie ilości operacji
-        def update_fig(lst, rects, iteration):
-            for rect, val in zip(rects, lst):
-                rect.set_height(val)
-            iteration[0] += 1
-            text.set_text("Ilość operacji: {}".format(iteration[0]))
+        # def update_fig(lst, rects, iteration):
+        #     for rect, val in zip(rects, lst):
+        #         rect.set_height(val)
+        #     iteration[0] += 1
+        #     text.set_text("Ilość operacji: {}".format(iteration[0]))
 
-        anim = FuncAnimation(fig, func=update_fig, fargs=(bar_rect, iteration), frames=anim_data,
-                             repeat=False,
-                             interval=self.speed_default.get())
+        # anim = FuncAnimation(fig, func=update_fig, fargs=(bar_rect, iteration), frames=anim_data,
+        #                      repeat=False,
+        #                      interval=self.speed_default.get())
+
+        def update(frame):
+            for rect, height in zip(bar_rect.patches, lst.full_copies[frame]):
+                rect.set_height(height)
+                rect.set_color("#234134")
+
+            # idx, op = lst.GetActivity(frame)
+            # if op == 'get':
+            #     bar_rect.patches[idx].set_color('magenta')
+            # elif op == 'set':
+            #     bar_rect.patches[idx].set_color('red')
+
+            return (*bar_rect,)
+
+        anim = FuncAnimation(fig, update, frames=range(len(lst.full_copies)), blit=True, interval=100, repeat=False)
+
         plt.show()
 
 
