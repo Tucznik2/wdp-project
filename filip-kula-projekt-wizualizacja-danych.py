@@ -142,7 +142,10 @@ class GUI:
     def show_graph(self, button):
         amount = int(self.size_entry.get())
         lst = np.random.randint(1, 100, amount)
+<<<<<<< HEAD
         lst = TrackedArray(lst)
+=======
+>>>>>>> db233914a6c87168030f21983b16883caa79a391
         # otwieranie i wprowadzanie danych do posorotwania do pliku
         result_file = open('wyniki.txt', 'a')
         result_file.write('Dane do posortowania:\n')
@@ -187,6 +190,7 @@ class GUI:
         iteration = [0]
 
         # funkcja odpowiadająca za odświeżanie wykresu i zliczanie ilości operacji
+<<<<<<< HEAD
         # def update_fig(lst, rects, iteration):
         #     for rect, val in zip(rects, lst):
         #         rect.set_height(val)
@@ -211,6 +215,14 @@ class GUI:
             return (*bar_rect,)
 
         anim = FuncAnimation(fig, update, frames=range(len(lst.full_copies)), blit=True, interval=100, repeat=False)
+=======
+        def update_fig(lst, rects, iteration):
+            for rect, val in zip(rects, lst):
+                rect.set_height(val)
+
+            iteration[0] += 1
+            text.set_text("Ilość operacji: {}".format(iteration[0]))
+>>>>>>> db233914a6c87168030f21983b16883caa79a391
 
         plt.show()
 
