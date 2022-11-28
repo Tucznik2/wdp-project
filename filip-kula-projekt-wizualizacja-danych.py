@@ -1,36 +1,30 @@
-# importowanie potrzebnych bibliotek
-import tkinter
+# zaimportowane biblioteki
+import tkinter as tk
+import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-import numpy as np
-import tkinter as tk
 
 
-# funkcja sortowania bombelkowego
-def bubble_sort(lst):
-    for i in range(len(lst)):
-        for j in range(0, len(lst) - i - 1):
-            if lst[j] > lst[j + 1]:
-                lst[j], lst[j + 1] = lst[j + 1], lst[j]
-            yield lst
-
-
-# funckja sortowania przez wybieranie
+# funkcje algorytmów sortowania
 def selection_sort(lst):
     for i in range(len(lst) - 1):
         minimum = i
         for j in range(i + 1, len(lst)):
             if lst[j] < lst[minimum]:
                 minimum = j
-            yield lst
         if i != minimum:
             pom = lst[i]
             lst[i] = lst[minimum]
             lst[minimum] = pom
-            yield lst
 
 
-# funkcja sortowania przez wstawianie
+def bubble_sort(lst):
+    for i in range(len(lst)):
+        for j in range(0, len(lst) - i - 1):
+            if lst[j] > lst[j + 1]:
+                lst[j], lst[j + 1] = lst[j + 1], lst[j]
+
+
 def insertion_sort(lst):
     for i in range(1, len(lst)):
         selected = lst[i]
@@ -39,16 +33,17 @@ def insertion_sort(lst):
             lst[y + 1] = lst[y]
             y -= 1
         lst[y + 1] = selected
-        yield lst
 
-class TrackedArray():
+
+# definicja klasy, która pozwala nam śledzić operacje jakie zostały wykonane na naszej liście
+class TrackedArray:
+
     def __init__(self, arr):
         self.arr = np.copy(arr)
         self.reset()
 
     def reset(self):
         self.indices = []
-        self.values = []
         self.values = []
         self.access_type = []
         self.full_copies = []
@@ -63,7 +58,7 @@ class TrackedArray():
         if isinstance(idx, type(None)):
             return [(i, op) for (i, op) in zip(self.indices, self.access_type)]
         else:
-            return (self.indices[idx], self.access_type[idx])
+            return self.indices[idx], self.access_type[idx]
 
     def __getitem__(self, key):
         self.track(key, "get")
@@ -77,7 +72,6 @@ class TrackedArray():
         return self.arr.__len__()
 
 
-# definicja klasy
 class GUI:
     # konstruktor tworzący interfejs graficzny
     def __init__(self):
@@ -107,7 +101,8 @@ class GUI:
         self.speed_label = tk.Label(self.speed_frame, text="Wybierz prędkość sortowania:", font=('Arial', 16))
         self.speed_default = tk.StringVar(self.speed_frame)
         self.speed_default.set("1000")
-        self.speed_select = tk.OptionMenu(self.speed_frame, self.speed_default,"1","10","100", "200", "500", "1000", "2000", "3000")
+        self.speed_select = tk.OptionMenu(self.speed_frame, self.speed_default, "1", "10", "100", "200", "500", "1000",
+                                          "2000", "3000")
         self.speed_label.grid(row=0, column=0, sticky=tk.W + tk.E, padx=10)
         self.speed_select.grid(row=0, column=1, sticky=tk.W + tk.E)
 
@@ -140,100 +135,69 @@ class GUI:
 
     # funkcja sprawdza, który guzik został wciśnięty, a nastepnie generuje wykres i ustawia odpowiedni tytuł
     def show_graph(self, button):
-        amount = int(self.size_entry.get())
-        lst = np.random.randint(1, 100, amount)
-<<<<<<< HEAD
+        fps = 60
+        lst = np.random.randint(1, 100, int(self.size_entry.get()))
+        np.random.seed(0)
+        np.random.shuffle(lst)
         lst = TrackedArray(lst)
-=======
->>>>>>> db233914a6c87168030f21983b16883caa79a391
-        # otwieranie i wprowadzanie danych do posorotwania do pliku
+        np.random.seed(0)
+
+        # zapis do pliku danych do posortowania
         result_file = open('wyniki.txt', 'a')
         result_file.write('Dane do posortowania:\n')
-        for x in lst:
+        for x in lst.arr:
             result_file.write(str(x) + " ")
 
         result_file.write('\n')
 
-        if button == "insert":
-            # anim_data = insertion_sort(lst)
-            for i in range(1, len(lst)):
-                selected = lst[i]
-                y = i - 1
-                while y >= 0 and selected < lst[y]:
-                    lst[y + 1] = lst[y]
-                    y -= 1
-                lst[y + 1] = selected
-                # yield lst
-            title = 'Sortowanie przez wstawianie'
-        elif button == "bubble":
-            # anim_data = bubble_sort(lst)
-            for i in range(len(lst)):
-                for j in range(0, len(lst) - i - 1):
-                    if lst[j] > lst[j + 1]:
-                        lst[j], lst[j + 1] = lst[j + 1], lst[j]
-                    # yield lst
-            title = 'Sortowanie bombelkowe'
+        # wybór algorytmu sortowania
+        if button == "bubble":
+            title = "Bubble"
+            bubble_sort(lst)
+        elif button == "insert":
+            title = "Insertion"
+            insertion_sort(lst)
         elif button == "select":
-            anim_data = selection_sort(lst)
-            title = 'Sortowanie przez wybieranie'
-        else:
-            return
-        fig, ax = plt.subplots(figsize=(15, 7))
-        ax.set_title(title)
-        bar_rect = ax.bar(range(len(lst)), lst, align='edge')
+            title = "Selection"
+            selection_sort(lst)
 
-        ax.set_xlim(0, len(lst))
-        ax.set_ylim(0, int(1.07 * max(lst)))
+        fig, ax = plt.subplots(figsize=(16, 8))
+        bar_rect = ax.bar(np.arange(0, len(lst), 1),
+                          lst.full_copies[0], align="edge", width=0.8)
+        fig.suptitle(f"{title} sort")
+        ax.set(xlabel="Index", ylabel="Wartość")
+        ax.set_xlim([0, int(self.size_entry.get())])
+        txt = ax.text(0.01, 0.99, "", ha="left", va="top", transform=ax.transAxes)
 
-        text = ax.text(0.02, 0.95, "", transform=ax.transAxes)
-
-        iteration = [0]
-
-        # funkcja odpowiadająca za odświeżanie wykresu i zliczanie ilości operacji
-<<<<<<< HEAD
-        # def update_fig(lst, rects, iteration):
-        #     for rect, val in zip(rects, lst):
-        #         rect.set_height(val)
-        #     iteration[0] += 1
-        #     text.set_text("Ilość operacji: {}".format(iteration[0]))
-
-        # anim = FuncAnimation(fig, func=update_fig, fargs=(bar_rect, iteration), frames=anim_data,
-        #                      repeat=False,
-        #                      interval=self.speed_default.get())
-
+        # odświeżanie wykresu
         def update(frame):
-            for rect, height in zip(bar_rect.patches, lst.full_copies[frame]):
-                rect.set_height(height)
-                rect.set_color("#234134")
+            txt.set_text(f"Operacje = {frame}")
+            for rectangle, height in zip(bar_rect.patches, lst.full_copies[frame]):
+                rectangle.set_height(height)
+                rectangle.set_color("#1f77b4")
 
-            # idx, op = lst.GetActivity(frame)
-            # if op == 'get':
-            #     bar_rect.patches[idx].set_color('magenta')
-            # elif op == 'set':
-            #     bar_rect.patches[idx].set_color('red')
+            idx, op = lst.GetActivity(frame)
+            if op == "get":
+                bar_rect.patches[idx].set_color("green")
+            elif op == "set":
+                bar_rect.patches[idx].set_color("red")
 
-            return (*bar_rect,)
+            return txt, *bar_rect
 
-        anim = FuncAnimation(fig, update, frames=range(len(lst.full_copies)), blit=True, interval=100, repeat=False)
-=======
-        def update_fig(lst, rects, iteration):
-            for rect, val in zip(rects, lst):
-                rect.set_height(val)
-
-            iteration[0] += 1
-            text.set_text("Ilość operacji: {}".format(iteration[0]))
->>>>>>> db233914a6c87168030f21983b16883caa79a391
+        # animacja wykresu
+        anim = FuncAnimation(fig, update, frames=range(len(lst.full_copies)),
+                            blit=True, interval=int(self.speed_default.get()) / fps, repeat=False)
 
         plt.show()
 
-
-        # wprowadzanie posortowanych danych do pliku, a nastepnie jego zamknięcie
+        # zapis do pliku
         result_file.write('Dane posortowane:\n')
-        for x in lst:
+        for x in lst.arr:
             result_file.write(str(x) + " ")
 
         result_file.write('\n')
         result_file.close()
+
 
 # instacja klasy
 GUI()
